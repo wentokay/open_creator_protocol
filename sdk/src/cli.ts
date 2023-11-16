@@ -19,11 +19,8 @@ import {
   process_tx,
 } from "./pda";
 import fs from "fs";
-import {
-  findMasterEditionV2Pda,
-  findMetadataPda,
-  TokenMetadataProgram,
-} from "@metaplex-foundation/js";
+import { Metaplex } from "@metaplex-foundation/js";
+import { PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 
 const CLI_COMMAND: "create_policy" | "update_policy" | "migrate_to_mpl" =
   (process.env.CLI_COMMAND ?? "create_policy") as any;
@@ -66,6 +63,7 @@ const CLI_UPDATE_AUTHORITY = Keypair.fromSecretKey(
 );
 
 const conn = new Connection(CLI_RPC, "confirmed");
+const { masterEdition, metadata } = new Metaplex(conn).nfts().pdas();
 
 async function create_policy() {
   const uuid = Keypair.generate().publicKey;
@@ -109,14 +107,14 @@ async function migrate_to_mpl() {
     policy: CLI_POLICY_PUBKEY,
     freezeAuthority: findFreezeAuthorityPk(CLI_POLICY_PUBKEY),
     mint: CLI_MINT,
-    metadata: findMetadataPda(CLI_MINT),
+    metadata: metadata({ mint: CLI_MINT }),
     mintState: findMintStatePk(CLI_MINT),
     from: CLI_UPDATE_AUTHORITY.publicKey,
     fromAccount: tokenAccount,
     cmtProgram: CMT_PROGRAM,
     instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
-    edition: findMasterEditionV2Pda(CLI_MINT),
-    metadataProgram: TokenMetadataProgram.publicKey,
+    edition: masterEdition({ mint: CLI_MINT }),
+    metadataProgram: PROGRAM_ID,
     payer: CLI_UPDATE_AUTHORITY.publicKey,
   });
   await process_tx(conn, [computeBudgetIx, ix], [CLI_UPDATE_AUTHORITY]);

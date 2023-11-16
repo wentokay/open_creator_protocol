@@ -1,8 +1,4 @@
-import {
-  findMetadataPda,
-  Metaplex,
-  walletAdapterIdentity,
-} from "@metaplex-foundation/js";
+import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
 import {
   createCreateMetadataAccountV3Instruction,
   DataV2,
@@ -73,6 +69,11 @@ export async function createTestMintAndWrap(
     wallet.publicKey
   );
 
+  const metadataPDA = metaplex
+    .nfts()
+    .pdas()
+    .metadata({ mint: mintKeypair.publicKey });
+
   const tx: Transaction = await createNewMintTransaction(
     connection,
     wallet.payer,
@@ -93,13 +94,13 @@ export async function createTestMintAndWrap(
       from: wallet.payer.publicKey,
       instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
       cmtProgram: CMT_PROGRAM,
-      metadata: findMetadataPda(mintKeypair.publicKey),
+      metadata: metadataPDA,
     }),
     createInitAccountInstruction({
       policy,
       freezeAuthority: findFreezeAuthorityPk(policy),
       mint: mintKeypair.publicKey,
-      metadata: findMetadataPda(mintKeypair.publicKey),
+      metadata: metadataPDA,
       mintState: findMintStatePk(mintKeypair.publicKey),
       from: wallet.publicKey,
       fromAccount: targetTokenAccount,
@@ -112,7 +113,7 @@ export async function createTestMintAndWrap(
       policy,
       freezeAuthority: findFreezeAuthorityPk(policy),
       mint: mintKeypair.publicKey,
-      metadata: findMetadataPda(mintKeypair.publicKey),
+      metadata: metadataPDA,
       mintState: findMintStatePk(mintKeypair.publicKey),
       from: wallet.publicKey,
       fromAccount: targetTokenAccount,
@@ -143,7 +144,10 @@ const createNewMintTransaction = async (
   //Get the minimum lamport balance to create a new account and avoid rent payments
   const requiredBalance = await getMinimumBalanceForRentExemptMint(connection);
   //metadata account associated with mint
-  const metadataPDA = findMetadataPda(mintKeypair.publicKey);
+  const metadataPDA = new Metaplex(connection)
+    .nfts()
+    .pdas()
+    .metadata({ mint: mintKeypair.publicKey });
 
   const ON_CHAIN_METADATA = {
     name: "xyzname",

@@ -1,11 +1,14 @@
-import { findMasterEditionV2Pda, findMetadataPda, TokenMetadataProgram } from "@metaplex-foundation/js";
-import { MasterEditionV2 } from "@metaplex-foundation/mpl-token-metadata";
+import { Metaplex } from "@metaplex-foundation/js";
+import {
+  MasterEditionV2,
+  PROGRAM_ID,
+} from "@metaplex-foundation/mpl-token-metadata";
 import * as anchor from "@project-serum/anchor";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAccount,
   getAssociatedTokenAddress,
-  getMint
+  getMint,
 } from "@solana/spl-token";
 import { Keypair, SYSVAR_INSTRUCTIONS_PUBKEY } from "@solana/web3.js";
 import { assert } from "chai";
@@ -25,15 +28,17 @@ import {
   findFreezeAuthorityPk,
   findMintStatePk,
   MintState,
-  process_tx
+  process_tx,
 } from "../sdk/src";
 import {
   airdrop,
   conn,
   createPolicyFixture,
   createTestMintAndWrap,
-  DEVNET_POLICY_ALL
+  DEVNET_POLICY_ALL,
 } from "./utils";
+
+const { masterEdition, metadata } = new Metaplex(conn).nfts().pdas();
 
 describe("policy", () => {
   const alice = Keypair.generate();
@@ -82,7 +87,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: tokenAta,
@@ -114,7 +119,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: bob.publicKey,
         fromAccount: tokenAta,
@@ -145,7 +150,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: tokenAta,
@@ -168,21 +173,20 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: tokenAta,
         cmtProgram: CMT_PROGRAM,
         instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
         payer: alice.publicKey,
-      })
+      });
       try {
         await process_tx(conn, [computeBudgetIx, mintToIx], [alice]);
         assert.fail("should have thrown");
       } catch (e: any) {
         assert.include(e.message, "failed to send transaction");
       }
-
     });
   });
 
@@ -199,7 +203,7 @@ describe("policy", () => {
       const lockIx = createLockInstruction({
         policy: DEVNET_POLICY_ALL,
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: aliceAta,
@@ -213,7 +217,7 @@ describe("policy", () => {
       const unlockIx = createUnlockInstruction({
         policy: DEVNET_POLICY_ALL,
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: bob.publicKey,
         cmtProgram: CMT_PROGRAM,
@@ -238,7 +242,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: aliceAta,
@@ -259,7 +263,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: aliceAta,
@@ -289,7 +293,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: bob.publicKey,
         fromAccount: bobAta,
@@ -303,7 +307,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: aliceAta,
@@ -338,7 +342,7 @@ describe("policy", () => {
         policy,
         freezeAuthority: findFreezeAuthorityPk(policy),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: bob.publicKey,
         fromAccount: bobAta,
@@ -352,7 +356,7 @@ describe("policy", () => {
         policy,
         freezeAuthority: findFreezeAuthorityPk(policy),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: aliceAta,
@@ -374,7 +378,7 @@ describe("policy", () => {
         policy,
         freezeAuthority: findFreezeAuthorityPk(policy),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: aliceAta,
@@ -406,7 +410,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: aliceAta,
@@ -419,7 +423,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: bob.publicKey,
         fromAccount: bobAta,
@@ -433,7 +437,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: eve.publicKey,
         fromAccount: aliceAta,
@@ -469,7 +473,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: aliceAta,
@@ -481,7 +485,7 @@ describe("policy", () => {
       const lockIx = createLockInstruction({
         policy: DEVNET_POLICY_ALL,
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: aliceAta,
@@ -493,7 +497,7 @@ describe("policy", () => {
       const unlockIx = createUnlockInstruction({
         policy: DEVNET_POLICY_ALL,
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: eve.publicKey,
         cmtProgram: CMT_PROGRAM,
@@ -504,7 +508,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: bob.publicKey,
         fromAccount: bobAta,
@@ -518,7 +522,7 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: eve.publicKey,
         fromAccount: aliceAta,
@@ -559,14 +563,14 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: alice.publicKey,
         fromAccount: tokenAta,
         cmtProgram: CMT_PROGRAM,
         instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
-        edition: findMasterEditionV2Pda(tokenMint),
-        metadataProgram: TokenMetadataProgram.publicKey,
+        edition: masterEdition({ mint: tokenMint }),
+        metadataProgram: PROGRAM_ID,
         payer: alice.publicKey,
       });
       await process_tx(conn, [computeBudgetIx, ix], [alice]);
@@ -588,7 +592,7 @@ describe("policy", () => {
 
       const editionAcc = await MasterEditionV2.fromAccountAddress(
         conn,
-        findMasterEditionV2Pda(tokenMint)
+        masterEdition({ mint: tokenMint })
       );
       assert.equal(editionAcc.maxSupply.toString(), "0");
     });
@@ -605,14 +609,14 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: bob.publicKey,
         fromAccount: tokenAta,
         cmtProgram: CMT_PROGRAM,
         instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
-        edition: findMasterEditionV2Pda(tokenMint),
-        metadataProgram: TokenMetadataProgram.publicKey,
+        edition: masterEdition({ mint: tokenMint }),
+        metadataProgram: PROGRAM_ID,
         payer: alice.publicKey,
       });
       await process_tx(conn, [computeBudgetIx, ix], [bob, alice]);
@@ -634,7 +638,7 @@ describe("policy", () => {
 
       const editionAcc = await MasterEditionV2.fromAccountAddress(
         conn,
-        findMasterEditionV2Pda(tokenMint)
+        masterEdition({ mint: tokenMint })
       );
       assert.equal(editionAcc.maxSupply.toString(), "0");
     });
@@ -651,14 +655,14 @@ describe("policy", () => {
         policy: DEVNET_POLICY_ALL,
         freezeAuthority: findFreezeAuthorityPk(DEVNET_POLICY_ALL),
         mint: tokenMint,
-        metadata: findMetadataPda(tokenMint),
+        metadata: metadata({ mint: tokenMint }),
         mintState: findMintStatePk(tokenMint),
         from: bob.publicKey,
         fromAccount: tokenAta,
         cmtProgram: CMT_PROGRAM,
         instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
-        edition: findMasterEditionV2Pda(tokenMint),
-        metadataProgram: TokenMetadataProgram.publicKey,
+        edition: masterEdition({ mint: tokenMint }),
+        metadataProgram: PROGRAM_ID,
         payer: alice.publicKey,
       });
 
@@ -670,5 +674,4 @@ describe("policy", () => {
       }
     });
   });
-
 });
